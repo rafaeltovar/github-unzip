@@ -1,0 +1,21 @@
+{
+    "name": "rafaeltovar/github-unzip",
+    "type": "library",
+    "description": "Small tool for download and unzip a repository from GitHub.com",
+    "keywords": ["github", "github.com", "unzip", "zip", "tools", "download"],
+    "homepage": "http://code.rafaeltovar.com",
+    "authors": [
+        {
+            "name": "Rafael Tovar",
+            "homepage": "http://www.rafaeltovar.info"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "GitHubUnzip\\": "src"
+        }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "~6.0"
+    }
+}

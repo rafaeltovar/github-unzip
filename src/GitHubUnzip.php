@@ -2,6 +2,7 @@
 namespace GitHubUnzip;
 
 use GuzzleHttp\Client;
+use ZipArchive;
 
 class GitHubUnzip {
     const BINARY_FORMAT = "application/octet-stream";
@@ -12,9 +13,9 @@ class GitHubUnzip {
 
     public function __construct(GitHubRepository $repository, $downloadDirectory, $options = []) {
         // Default options
-        $defaultOptions = ['rename-extract-directory' => '',
-                           'zip-delete'               => true,
-                           'zip-name'                 => null];
+        $defaultOptions = ['project-directory-path' => null,
+                           'zip-delete'             => true,
+                           'zip-name'               => null];
 
         $this->repository = $repository;
         $this->directory = $downloadDirectory;
@@ -40,26 +41,51 @@ class GitHubUnzip {
             // Base URI is used with relative requests
             // 'base_uri' => 'http://httpbin.org',
             // You can set any number of default request options.
-            'timeout'  => 2.0,
+            //'timeout'  => 2.0,
         ]);
 
         $resource = fopen($zip, 'w');
 
-        $this->getClient()->send('GET',
-                                 $this->repository->getUri(),
-                                 ['headers' => ['content-type' => self::BINARY_FORMAT],
-                                  'sink' => $resource]);
+        $uri = $this->repository->getUri();
+        $httpClient->request( 'GET',
+                              $uri,
+                              ['headers' => ['content-type' => self::BINARY_FORMAT],
+                               'sink' => $resource]);
 
         if(!file_exists($zip) || filesize($zip) == 0) {
+            @unlink($zip);
             throw new \Exception("Zip file not saved");
         }
-
-        fclose($resource);
 
         return realpath($zip);
     }
 
     public function downloadAndUnzip() {
-        // TODO
+        $file = $this->downloadZip();
+
+        $path = pathinfo(realpath($file), PATHINFO_DIRNAME);
+
+        $zip = new ZipArchive;
+        $res = $zip->open($file);
+
+        if ($res === false)
+            throw new \Exception("Can't open zip file");
+
+        $zipDirName = sprintf('%s/%s', $this->directory, $zip->getNameIndex(0));
+
+        // extract it to the path we determined above
+        $zip->extractTo($path);
+        $zip->close();
+
+        if($this->options['zip-delete'])
+            @unlink($file);
+
+        if(isset($this->options['project-directory-path'])) {
+            if(!is_dir(dirname($this->options['project-directory-path'])) || !is_writable(dirname($this->options['project-directory-path'])))
+                throw new \Exception("Move directory base is not writable.");
+
+            @rename($zipDirName, $this->options['project-directory-path']);
+        }
+
     }
 }

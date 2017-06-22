@@ -21,7 +21,7 @@ class GitHubRepository {
         $extra = [];
 
         // access token
-        if(!isset($this->options['access_token']))
+        if(isset($this->options['access_token']))
             $extra['access_token'] = $this->options['access_token'];
 
         $params = http_build_query($extra);
