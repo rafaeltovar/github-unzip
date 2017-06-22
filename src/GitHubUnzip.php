@@ -16,7 +16,7 @@ class GitHubUnzip {
     public function __construct(GitHubRepository $repository, $downloadDirectory, $options = []) {
         // Default options
         $defaultOptions = ['project-directory-path' => null,
-                           'project-directory-path-rewrite' => true,
+                           'project-directory-path-overwrite' => true,
                            'zip-delete'             => true,
                            'zip-name'               => null];
 
@@ -96,7 +96,7 @@ class GitHubUnzip {
             if(!is_dir(dirname($this->options['project-directory-path'])) || !is_writable(dirname($this->options['project-directory-path'])))
                 throw new \Exception("Project directory base is not writable.");
 
-            if($this->options['project-directory-path-rewrite'] && is_dir($this->options['project-directory-path']))
+            if($this->options['project-directory-path-overwrite'] && is_dir($this->options['project-directory-path']))
                 $fs->remove($this->options['project-directory-path']);
 
             $fs->rename($zipDirName, $this->options['project-directory-path']);
