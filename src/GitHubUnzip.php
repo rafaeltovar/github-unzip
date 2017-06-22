@@ -2,6 +2,8 @@
 namespace GitHubUnzip;
 
 use GuzzleHttp\Client;
+use Symfony\Component\Filesystem\Filesystem;
+
 use ZipArchive;
 
 class GitHubUnzip {
@@ -14,6 +16,7 @@ class GitHubUnzip {
     public function __construct(GitHubRepository $repository, $downloadDirectory, $options = []) {
         // Default options
         $defaultOptions = ['project-directory-path' => null,
+                           'project-directory-path-rewrite' => true,
                            'zip-delete'             => true,
                            'zip-name'               => null];
 
@@ -63,29 +66,42 @@ class GitHubUnzip {
     public function downloadAndUnzip() {
         $file = $this->downloadZip();
 
+        // filesystem
+        $fs = new Filesystem();
+
+        // get path of downloaded zip file
         $path = pathinfo(realpath($file), PATHINFO_DIRNAME);
 
+        // create zip file
         $zip = new ZipArchive;
         $res = $zip->open($file);
 
         if ($res === false)
             throw new \Exception("Can't open zip file");
 
+        // get directory project name from zip file
+        // example: rafaeltovar-github-unzip-MD5_HASH/
         $zipDirName = sprintf('%s/%s', $this->directory, $zip->getNameIndex(0));
 
         // extract it to the path we determined above
         $zip->extractTo($path);
         $zip->close();
 
+        // delete zip file
         if($this->options['zip-delete'])
-            @unlink($file);
+            $fs->remove($file);
 
+        // move project directory
         if(isset($this->options['project-directory-path'])) {
             if(!is_dir(dirname($this->options['project-directory-path'])) || !is_writable(dirname($this->options['project-directory-path'])))
                 throw new \Exception("Move directory base is not writable.");
 
-            @rename($zipDirName, $this->options['project-directory-path']);
+            if($this->options['project-directory-path-rewrite'] && is_dir($this->options['project-directory-path']))
+                $fs->remove($this->options['project-directory-path']);
+
+            $fs->rename($zipDirName, $this->options['project-directory-path']);
         }
 
     }
+
 }
